@@ -18,7 +18,7 @@ def create_notice(
     notice_service = NoticeService(db)
     author_name = current_user["name"]  # JWT에서 사용자 이름 가져오기
     notice = notice_service.create_notice(notice_data, author_name)
-    return notice
+    return NoticeResponse.from_notice(notice)
 
 @router.get("/", response_model=NoticeListResponse)
 def get_notices(
@@ -31,7 +31,10 @@ def get_notices(
     notices = notice_service.get_notices(skip=skip, limit=limit)
     total = notice_service.get_notices_count()
     
-    return NoticeListResponse(notices=notices, total=total)
+    # Notice 객체들을 NoticeResponse로 변환
+    notice_responses = [NoticeResponse.from_notice(notice) for notice in notices]
+    
+    return NoticeListResponse(notices=notice_responses, total=total)
 
 @router.get("/{notice_id}", response_model=NoticeResponse)
 def get_notice(notice_id: int, db: Session = Depends(get_db_session)):
@@ -42,7 +45,7 @@ def get_notice(notice_id: int, db: Session = Depends(get_db_session)):
     if not notice:
         raise HTTPException(status_code=404, detail="공지사항을 찾을 수 없습니다")
     
-    return notice
+    return NoticeResponse.from_notice(notice)
 
 @router.put("/{notice_id}", response_model=NoticeResponse)
 def update_notice(
@@ -58,7 +61,7 @@ def update_notice(
     if not notice:
         raise HTTPException(status_code=404, detail="공지사항을 찾을 수 없습니다")
     
-    return notice
+    return NoticeResponse.from_notice(notice)
 
 @router.delete("/{notice_id}")
 def delete_notice(

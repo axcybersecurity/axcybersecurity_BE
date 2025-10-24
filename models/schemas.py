@@ -60,6 +60,18 @@ class NoticeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+    
+    @classmethod
+    def from_notice(cls, notice):
+        """Notice 객체에서 NoticeResponse 생성"""
+        return cls(
+            id=notice.id,
+            title=notice.title,
+            content=notice.content,
+            author=notice.author,
+            created_at=notice.created_at.isoformat(),
+            view_count=notice.view_count
+        )
 
 class NoticeListResponse(BaseModel):
     notices: List[NoticeResponse]
