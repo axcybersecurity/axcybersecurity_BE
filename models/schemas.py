@@ -40,3 +40,28 @@ class FileListResponse(BaseModel):
     total: int
     offset: int
     limit: int
+
+# 공지사항 관련 스키마
+class NoticeCreate(BaseModel):
+    title: str
+    content: str
+    author: str
+
+class NoticeUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+
+class NoticeResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    author: str
+    created_at: str
+    view_count: int
+
+    class Config:
+        from_attributes = True
+
+class NoticeListResponse(BaseModel):
+    notices: List[NoticeResponse]
+    total: int
