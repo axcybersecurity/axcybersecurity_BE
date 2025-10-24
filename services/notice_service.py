@@ -8,12 +8,12 @@ class NoticeService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_notice(self, notice_data: NoticeCreate) -> Notice:
+    def create_notice(self, notice_data: NoticeCreate, author: str) -> Notice:
         """공지사항 생성"""
         notice = Notice(
             title=notice_data.title,
             content=notice_data.content,
-            author=notice_data.author,
+            author=author,
             created_at=datetime.utcnow(),
             view_count=0
         )

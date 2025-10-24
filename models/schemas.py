@@ -45,7 +45,6 @@ class FileListResponse(BaseModel):
 class NoticeCreate(BaseModel):
     title: str
     content: str
-    author: str
 
 class NoticeUpdate(BaseModel):
     title: Optional[str] = None
