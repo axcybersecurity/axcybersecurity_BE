@@ -8,19 +8,19 @@ from models.user import Position
 
 router = APIRouter(prefix="/auth", tags=["인증"])
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate, db: Session = Depends(get_db_session)):
-    """회원가입"""
-    user_service = UserService(db)
-    new_user = user_service.create_user(user_data)
+# @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+# async def register(user_data: UserCreate, db: Session = Depends(get_db_session)):
+#     """회원가입"""
+#     user_service = UserService(db)
+#     new_user = user_service.create_user(user_data)
     
-    return UserResponse(
-        id=new_user.id,
-        login_id=new_user.login_id,
-        name=new_user.name,
-        position=Position(new_user.user_position),
-        created_at=new_user.created_at.isoformat()
-    )
+#     return UserResponse(
+#         id=new_user.id,
+#         login_id=new_user.login_id,
+#         name=new_user.name,
+#         position=Position(new_user.user_position),
+#         created_at=new_user.created_at.isoformat()
+#     )
 
 @router.post("/login", response_model=Token)
 async def login(login_data: UserLogin, db: Session = Depends(get_db_session)):
