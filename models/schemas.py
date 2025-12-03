@@ -76,3 +76,42 @@ class NoticeResponse(BaseModel):
 class NoticeListResponse(BaseModel):
     notices: List[NoticeResponse]
     total: int
+
+# 포스팅 관련 스키마
+class PostCreate(BaseModel):
+    caption: str  # 캡션/제목
+    description: str  # 설명/내용
+    author_id: int  # 작성자 ID
+
+class PostUpdate(BaseModel):
+    caption: Optional[str] = None
+    description: Optional[str] = None
+
+class PostResponse(BaseModel):
+    id: int
+    caption: str
+    description: str
+    image_path: str
+    author_id: int
+    created_at: str
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+    
+    @classmethod
+    def from_post(cls, post):
+        """Post 객체에서 PostResponse 생성"""
+        return cls(
+            id=post.id,
+            caption=post.caption,
+            description=post.description,
+            image_path=post.image_path,
+            author_id=post.author_id,
+            created_at=post.created_at.isoformat(),
+            updated_at=post.updated_at.isoformat() if post.updated_at else None
+        )
+
+class PostListResponse(BaseModel):
+    posts: List[PostResponse]
+    total: int
