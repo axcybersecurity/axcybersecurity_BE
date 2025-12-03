@@ -11,7 +11,12 @@ app = FastAPI(title="InfoSec Backend API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 또는 Unity 실행 주소
+    allow_origins=[
+    "https://accs.pusan.ac.kr",
+    "http://accs.pusan.ac.kr",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+    ],  # 또는 Unity 실행 주소
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
