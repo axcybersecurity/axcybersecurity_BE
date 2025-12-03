@@ -16,7 +16,7 @@ python-multipart==0.0.6
 
 # 데이터 검증
 pydantic==2.5.0
-pydantic_core==2.14.0
+pydantic_core==2.14.1
 email-validator==2.1.0
 
 # 환경변수
@@ -24,7 +24,8 @@ python-dotenv==1.0.0
 
 # HTTP 클라이언트
 httpx==0.25.2
-httpcore==0.18.0
+httpcore==1.0.0
+h11==0.14.0
 
 # 유틸리티
 click==8.1.7
