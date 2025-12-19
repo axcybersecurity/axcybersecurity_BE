@@ -8,12 +8,12 @@ class PostService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_post(self, caption: str, description: str, image_path: str, author_id: int) -> Post:
+    def create_post(self, caption: str, description: str, image_paths: List[str], author_id: int) -> Post:
         """포스팅 생성"""
         post = Post(
             caption=caption,
             description=description,
-            image_path=image_path,
+            image_paths=image_paths,
             author_id=author_id,
             created_at=datetime.utcnow()
         )
@@ -37,7 +37,7 @@ class PostService:
         statement = select(Post)
         return len(list(self.db.exec(statement)))
 
-    def update_post(self, post_id: int, post_data: PostUpdate, image_path: Optional[str] = None) -> Optional[Post]:
+    def update_post(self, post_id: int, post_data: PostUpdate, image_paths: Optional[List[str]] = None) -> Optional[Post]:
         """포스팅 수정"""
         statement = select(Post).where(Post.id == post_id)
         post = self.db.exec(statement).first()
@@ -47,8 +47,8 @@ class PostService:
                 post.caption = post_data.caption
             if post_data.description is not None:
                 post.description = post_data.description
-            if image_path is not None:
-                post.image_path = image_path
+            if image_paths is not None:
+                post.image_paths = image_paths
             post.updated_at = datetime.utcnow()
             
             self.db.commit()

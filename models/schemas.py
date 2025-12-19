@@ -91,7 +91,7 @@ class PostResponse(BaseModel):
     id: int
     caption: str
     description: str
-    image_path: str
+    image_paths: List[str]  # 이미지 파일 경로 리스트
     author_id: int
     created_at: str
     updated_at: Optional[str] = None
@@ -106,7 +106,7 @@ class PostResponse(BaseModel):
             id=post.id,
             caption=post.caption,
             description=post.description,
-            image_path=post.image_path,
+            image_paths=post.image_paths if post.image_paths else [],
             author_id=post.author_id,
             created_at=post.created_at.isoformat(),
             updated_at=post.updated_at.isoformat() if post.updated_at else None

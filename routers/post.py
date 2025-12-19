@@ -41,28 +41,41 @@ def save_uploaded_file(file: UploadFile) -> str:
 
 @router.post("/", response_model=PostResponse)
 async def create_post(
-    image: UploadFile = File(..., description="이미지 파일"),
+    images: List[UploadFile] = File(..., description="이미지 파일들 (여러 개 가능)"),
     caption: str = Form(..., description="캡션/제목"),
     description: str = Form(..., description="설명/내용"),
     author_id: int = Form(..., description="작성자 ID"),
     db: Session = Depends(get_db_session),
     current_user: dict = Depends(get_current_user)
 ):
-    """포스팅 생성 (multipart/form-data)"""
-    # 이미지 파일 저장
+    """포스팅 생성 (multipart/form-data) - 여러 이미지 지원"""
+    # 이미지 파일들 저장
+    image_paths = []
     try:
-        image_path = save_uploaded_file(image)
+        for image in images:
+            image_path = save_uploaded_file(image)
+            image_paths.append(image_path)
     except HTTPException:
         raise
     except Exception as e:
+        # 저장 실패한 파일들 정리
+        for path in image_paths:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except:
+                pass
         raise HTTPException(status_code=500, detail=f"파일 저장 실패: {str(e)}")
+    
+    if not image_paths:
+        raise HTTPException(status_code=400, detail="최소 하나의 이미지 파일이 필요합니다")
     
     # 포스팅 생성
     post_service = PostService(db)
     post = post_service.create_post(
         caption=caption,
         description=description,
-        image_path=image_path,
+        image_paths=image_paths,
         author_id=author_id
     )
     
@@ -99,11 +112,11 @@ async def update_post(
     post_id: int,
     caption: Optional[str] = Form(None, description="캡션/제목"),
     description: Optional[str] = Form(None, description="설명/내용"),
-    image: Optional[UploadFile] = File(None, description="이미지 파일 (선택사항)"),
+    images: Optional[List[UploadFile]] = File(None, description="이미지 파일들 (선택사항, 여러 개 가능)"),
     db: Session = Depends(get_db_session),
     current_user: dict = Depends(get_current_user)
 ):
-    """포스팅 수정"""
+    """포스팅 수정 - 여러 이미지 지원"""
     post_service = PostService(db)
     post = post_service.get_post(post_id)
     
@@ -116,23 +129,45 @@ async def update_post(
         description=description
     )
     
-    # 이미지 파일이 제공된 경우 저장
-    image_path = None
-    if image:
+    # 이미지 파일들이 제공된 경우 저장
+    image_paths = None
+    if images:
+        new_image_paths = []
         try:
-            image_path = save_uploaded_file(image)
-            # 기존 이미지 파일 삭제 (선택사항)
-            if post.image_path and os.path.exists(post.image_path):
-                try:
-                    os.remove(post.image_path)
-                except:
-                    pass  # 삭제 실패해도 계속 진행
+            for image in images:
+                image_path = save_uploaded_file(image)
+                new_image_paths.append(image_path)
+            
+            # 기존 이미지 파일들 삭제 (선택사항)
+            if post.image_paths:
+                for old_path in post.image_paths:
+                    if old_path and os.path.exists(old_path):
+                        try:
+                            os.remove(old_path)
+                        except:
+                            pass  # 삭제 실패해도 계속 진행
+            
+            image_paths = new_image_paths
         except HTTPException:
+            # 저장 실패한 파일들 정리
+            for path in new_image_paths:
+                try:
+                    if os.path.exists(path):
+                        os.remove(path)
+                except:
+                    pass
             raise
         except Exception as e:
+            # 저장 실패한 파일들 정리
+            for path in new_image_paths:
+                try:
+                    if os.path.exists(path):
+                        os.remove(path)
+                except:
+                    pass
             raise HTTPException(status_code=500, detail=f"파일 저장 실패: {str(e)}")
     
-    updated_post = post_service.update_post(post_id, post_data, image_path)
+    updated_post = post_service.update_post(post_id, post_data, image_paths)
     
     return PostResponse.from_post(updated_post)
 
@@ -149,12 +184,14 @@ def delete_post(
     if not post:
         raise HTTPException(status_code=404, detail="포스팅을 찾을 수 없습니다")
     
-    # 이미지 파일 삭제
-    if post.image_path and os.path.exists(post.image_path):
-        try:
-            os.remove(post.image_path)
-        except:
-            pass  # 삭제 실패해도 계속 진행
+    # 이미지 파일들 삭제
+    if post.image_paths:
+        for image_path in post.image_paths:
+            if image_path and os.path.exists(image_path):
+                try:
+                    os.remove(image_path)
+                except:
+                    pass  # 삭제 실패해도 계속 진행
     
     success = post_service.delete_post(post_id)
     
