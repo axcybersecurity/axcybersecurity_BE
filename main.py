@@ -1,5 +1,6 @@
 # main.py
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from dependencies.db import create_db_and_table
 from fastapi.middleware.cors import CORSMiddleware
 from routers.auth import router as auth_router
@@ -21,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 정적 파일 서빙 (이미지 파일 접근용)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # 라우터 등록
 app.include_router(auth_router)
