@@ -44,11 +44,13 @@ async def create_post(
     images: List[UploadFile] = File(..., description="이미지 파일들 (여러 개 가능)"),
     caption: str = Form(..., description="캡션/제목"),
     description: str = Form(..., description="설명/내용"),
-    author_id: int = Form(..., description="작성자 ID"),
     db: Session = Depends(get_db_session),
     current_user: dict = Depends(get_current_user)
 ):
     """포스팅 생성 (multipart/form-data) - 여러 이미지 지원"""
+    # 현재 로그인한 사용자의 ID를 author_id로 사용
+    author_id = int(current_user.get("sub"))
+    
     # 이미지 파일들 저장
     image_paths = []
     try:
