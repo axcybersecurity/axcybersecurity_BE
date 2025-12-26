@@ -8,7 +8,7 @@ from routers.auth import router as auth_router
 from routers.notice import router as notice_router
 from routers.post import router as post_router
 
-app = FastAPI(title="InfoSec Backend API", version="1.0.0", redirect_slashes=False)
+app = FastAPI(title="InfoSec Backend API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
