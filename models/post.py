@@ -11,4 +11,3 @@ class Post(SQLModel, table=True):
     author_id: int = Field(index=True)  # 작성자 ID
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
-
