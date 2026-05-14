@@ -6,9 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.auth import router as auth_router
 # from routers.files import router as files_router
 from routers.notice import router as notice_router
+from routers.classnotice import router as classnotice_router
 from routers.post import router as post_router
 
-app = FastAPI(title="InfoSec Backend API", version="1.0.0",root_path="/api")
+app = FastAPI(title="InfoSec Backend API", version="1.0.0", root_path="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,6 +31,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(auth_router)
 # app.include_router(files_router)
 app.include_router(notice_router)
+app.include_router(classnotice_router)
 app.include_router(post_router)
 
 @app.on_event("startup")
