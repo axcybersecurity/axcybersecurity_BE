@@ -1,3 +1,4 @@
+# routers/classnotice.py
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request
 from sqlmodel import Session, select
 from typing import List, Optional
@@ -47,7 +48,7 @@ def create_classnotice(
     request: Request,
     title: str = Form(...),
     content: str = Form(...),
-    files: Optional[List[UploadFile]] = File(default=[]),
+    files: List[UploadFile] = File([]),
     db: Session = Depends(get_db_session),
     current_user: dict = Depends(get_current_user),
 ):
