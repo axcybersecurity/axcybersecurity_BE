@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from pathlib import Path
 from uuid import uuid4
-import shutil
+import os
 
 from dependencies.db import get_db_session
 from dependencies.auth_deps import get_current_user
@@ -16,6 +16,8 @@ UPLOAD_DIR = Path("uploads/classnotice")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".ppt", ".pptx", ".pdf", ".hwp", ".hwpx"}
+MAX_FILE_SIZE = int(os.getenv("CLASSNOTICE_MAX_FILE_SIZE_MB", "100")) * 1024 * 1024
+COPY_CHUNK_SIZE = 1024 * 1024
 
 
 def make_file_url(request: Request, saved_name: str) -> str:
@@ -61,42 +63,65 @@ def create_classnotice(
     )
 
     db.add(notice)
-    db.commit()
-    db.refresh(notice)
+    db.flush()
 
     saved_files = []
+    saved_paths = []
+    current_path = None
 
-    for upload in files or []:
-        original_name = upload.filename
-        ext = Path(original_name).suffix.lower()
+    try:
+        for upload in files or []:
+            original_name = upload.filename
+            ext = Path(original_name).suffix.lower()
 
-        if ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"허용되지 않는 파일 형식입니다: {original_name}",
+            if ext not in ALLOWED_EXTENSIONS:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"허용되지 않는 파일 형식입니다: {original_name}",
+                )
+
+            saved_name = f"{uuid4().hex}{ext}"
+            current_path = UPLOAD_DIR / saved_name
+            file_size = 0
+
+            with current_path.open("wb") as buffer:
+                while chunk := upload.file.read(COPY_CHUNK_SIZE):
+                    file_size += len(chunk)
+                    if file_size > MAX_FILE_SIZE:
+                        raise HTTPException(
+                            status_code=413,
+                            detail=(
+                                f"파일 크기는 "
+                                f"{MAX_FILE_SIZE // (1024 * 1024)}MB를 초과할 수 없습니다: "
+                                f"{original_name}"
+                            ),
+                        )
+                    buffer.write(chunk)
+
+            upload.file.close()
+            saved_paths.append(current_path)
+            current_path = None
+
+            file_record = ClassNoticeFile(
+                classnotice_id=notice.id,
+                original_name=original_name,
+                saved_name=saved_name,
+                file_url=make_file_url(request, saved_name),
+                file_size=file_size,
             )
+            db.add(file_record)
+            saved_files.append(file_record)
 
-        saved_name = f"{uuid4().hex}{ext}"
-        save_path = UPLOAD_DIR / saved_name
+        db.commit()
+    except Exception:
+        db.rollback()
+        if current_path is not None:
+            current_path.unlink(missing_ok=True)
+        for path in saved_paths:
+            path.unlink(missing_ok=True)
+        raise
 
-        with save_path.open("wb") as buffer:
-            shutil.copyfileobj(upload.file, buffer)
-
-        file_size = save_path.stat().st_size
-        file_url = make_file_url(request, saved_name)
-
-        file_record = ClassNoticeFile(
-            classnotice_id=notice.id,
-            original_name=original_name,
-            saved_name=saved_name,
-            file_url=file_url,
-            file_size=file_size,
-        )
-
-        db.add(file_record)
-        saved_files.append(file_record)
-
-    db.commit()
+    db.refresh(notice)
 
     for file_record in saved_files:
         db.refresh(file_record)
