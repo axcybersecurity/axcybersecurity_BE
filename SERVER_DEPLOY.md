@@ -24,3 +24,11 @@ sudo systemctl status <service-name> --no-pager
 ```
 
 파일당 제한을 바꾸려면 백엔드 서비스에 `CLASSNOTICE_MAX_FILE_SIZE_MB`환경 변수를 설정하고, Nginx의 `client_max_body_size`는 그보다 약간 크게 설정합니다.
+
+## 계정 생성
+
+백엔드 저장소 루트에서 계정 생성 명령을 실행합니다. 비밀번호는 명령줄 기록에 남지 않도록 실행 후 숨김 입력으로 받습니다.
+
+```bash
+.venv/bin/python -m scripts.create_user gini 정지인 학부연구생
+```
