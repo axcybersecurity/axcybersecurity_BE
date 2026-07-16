@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 # 정적 파일 서빙 (이미지 파일 접근용)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount(f"{API_PREFIX}/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # 라우터 등록
 app.include_router(auth_router, prefix=API_PREFIX)

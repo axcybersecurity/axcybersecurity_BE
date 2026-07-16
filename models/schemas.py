@@ -102,11 +102,21 @@ class PostResponse(BaseModel):
     @classmethod
     def from_post(cls, post):
         """Post 객체에서 PostResponse 생성"""
+        image_paths = []
+        for path in post.image_paths or []:
+            normalized_path = path.replace("\\", "/").lstrip("/")
+            if normalized_path.startswith("api/uploads/"):
+                image_paths.append(f"/{normalized_path}")
+            elif normalized_path.startswith("uploads/"):
+                image_paths.append(f"/api/{normalized_path}")
+            else:
+                image_paths.append(path)
+
         return cls(
             id=post.id,
             caption=post.caption,
             description=post.description,
-            image_paths=post.image_paths if post.image_paths else [],
+            image_paths=image_paths,
             author_id=post.author_id,
             created_at=post.created_at.isoformat(),
             updated_at=post.updated_at.isoformat() if post.updated_at else None

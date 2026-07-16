@@ -22,7 +22,13 @@ COPY_CHUNK_SIZE = 1024 * 1024
 
 def make_file_url(request: Request, saved_name: str) -> str:
     base_url = str(request.base_url).rstrip("/")
-    return f"{base_url}/uploads/classnotice/{saved_name}"
+    return f"{base_url}/api/uploads/classnotice/{saved_name}"
+
+
+def normalize_file_url(file_url: str) -> str:
+    if "/api/uploads/" in file_url:
+        return file_url
+    return file_url.replace("/uploads/", "/api/uploads/", 1)
 
 
 def serialize_notice(notice: ClassNotice, files: List[ClassNoticeFile]):
@@ -37,7 +43,7 @@ def serialize_notice(notice: ClassNotice, files: List[ClassNoticeFile]):
             {
                 "id": file.id,
                 "original_name": file.original_name,
-                "file_url": file.file_url,
+                "file_url": normalize_file_url(file.file_url),
                 "file_size": file.file_size,
             }
             for file in files
