@@ -9,7 +9,14 @@ from routers.notice import router as notice_router
 from routers.classnotice import router as classnotice_router
 from routers.post import router as post_router
 
-app = FastAPI(title="InfoSec Backend API", version="1.0.0", root_path="/api")
+API_PREFIX = "/api"
+app = FastAPI(
+    title="InfoSec Backend API",
+    version="1.0.0",
+    openapi_url=f"{API_PREFIX}/openapi.json",
+    docs_url=f"{API_PREFIX}/docs",
+    redoc_url=f"{API_PREFIX}/redoc",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,11 +35,11 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # 라우터 등록
-app.include_router(auth_router)
-# app.include_router(files_router)
-app.include_router(notice_router)
-app.include_router(classnotice_router)
-app.include_router(post_router)
+app.include_router(auth_router, prefix=API_PREFIX)
+# app.include_router(files_router, prefix=API_PREFIX)
+app.include_router(notice_router, prefix=API_PREFIX)
+app.include_router(classnotice_router, prefix=API_PREFIX)
+app.include_router(post_router, prefix=API_PREFIX)
 
 @app.on_event("startup")
 def on_startup():
