@@ -235,8 +235,8 @@ def delete_classnotice(
 
     for file_record in files:
         file_path = UPLOAD_DIR / file_record.saved_name
-        if file_path.exists():
-            file_path.unlink()
+        # 안전하게 파일 삭제: 파일이 이미 없을 경우 예외를 무시합니다
+        file_path.unlink(missing_ok=True)
 
         db.delete(file_record)
 

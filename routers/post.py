@@ -186,14 +186,46 @@ def delete_post(
     if not post:
         raise HTTPException(status_code=404, detail="포스팅을 찾을 수 없습니다")
     
-    # 이미지 파일들 삭제
+    # 이미지 파일들 삭제: 다양한 저장 형식(윈도우 경로, 상대경로, "/api/uploads/..." 또는 전체 URL)을 처리
     if post.image_paths:
+        from urllib.parse import urlparse
+
         for image_path in post.image_paths:
-            if image_path and os.path.exists(image_path):
+            if not image_path:
+                continue
+
+            # normalize slashes
+            normalized = image_path.replace("\\", "/")
+
+            # Resolve filesystem path from possible formats:
+            # - full URL (http(s)://host/...)
+            # - "/api/uploads/..." or "/uploads/..."
+            # - "uploads/..." or "uploads\\..."
+            fs_path = None
+
+            if normalized.startswith("http://") or normalized.startswith("https://"):
+                parsed = urlparse(normalized)
+                path = parsed.path or ""
+                # strip leading /api/ if present
+                if path.startswith("/api/"):
+                    path = path[len("/api/"):]
+                fs_path = path.lstrip("/")
+            else:
+                if normalized.startswith("/api/"):
+                    fs_path = normalized[len("/api/"):].lstrip("/")
+                else:
+                    fs_path = normalized.lstrip("/")
+
+            try:
+                p = Path(fs_path)
+                p.unlink(missing_ok=True)
+            except Exception:
                 try:
-                    os.remove(image_path)
+                    # fallback to os.remove on original string
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
                 except:
-                    pass  # 삭제 실패해도 계속 진행
+                    pass
     
     success = post_service.delete_post(post_id)
     

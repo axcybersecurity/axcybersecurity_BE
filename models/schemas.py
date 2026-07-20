@@ -103,14 +103,50 @@ class PostResponse(BaseModel):
     def from_post(cls, post):
         """Post 객체에서 PostResponse 생성"""
         image_paths = []
+        from pathlib import Path
+        from urllib.parse import urlparse
+
         for path in post.image_paths or []:
-            normalized_path = path.replace("\\", "/").lstrip("/")
-            if normalized_path.startswith("api/uploads/"):
-                image_paths.append(f"/{normalized_path}")
-            elif normalized_path.startswith("uploads/"):
-                image_paths.append(f"/api/{normalized_path}")
-            else:
-                image_paths.append(path)
+            if not path:
+                continue
+
+            normalized = path.replace("\\", "/")
+
+            # full URL (http/https)
+            if normalized.startswith("http://") or normalized.startswith("https://"):
+                parsed = urlparse(normalized)
+                p = parsed.path or ""
+                if "/api/uploads/" in p:
+                    image_paths.append(p)
+                    continue
+                idx = p.find("/uploads/")
+                if idx != -1:
+                    suffix = p[idx + len("/uploads/"):]
+                    image_paths.append(f"/api/uploads/{suffix}")
+                    continue
+                # fallback: use basename
+                image_paths.append(f"/api/uploads/{Path(p).name}")
+                continue
+
+            # non-URL paths
+            # case: starts with /api/uploads or /uploads
+            p = normalized.lstrip("/")
+            if p.startswith("api/uploads/"):
+                image_paths.append(f"/{p}")
+                continue
+            if p.startswith("uploads/"):
+                image_paths.append(f"/api/{p}")
+                continue
+
+            # contains uploads segment (absolute filesystem path or other)
+            idx = normalized.find("uploads/")
+            if idx != -1:
+                suffix = normalized[idx + len("uploads/"):]
+                image_paths.append(f"/api/uploads/{suffix}")
+                continue
+
+            # final fallback: use basename under /api/uploads
+            image_paths.append(f"/api/uploads/{Path(normalized).name}")
 
         return cls(
             id=post.id,
