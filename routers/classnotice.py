@@ -233,15 +233,23 @@ def delete_classnotice(
         select(ClassNoticeFile).where(ClassNoticeFile.classnotice_id == notice.id)
     ).all()
 
-    for file_record in files:
-        file_path = UPLOAD_DIR / file_record.saved_name
-        # 안전하게 파일 삭제: 파일이 이미 없을 경우 예외를 무시합니다
-        file_path.unlink(missing_ok=True)
+    file_paths = [UPLOAD_DIR / file_record.saved_name for file_record in files]
 
+    for file_record in files:
         db.delete(file_record)
 
-    db.delete(notice)
-    db.commit()
+    try:
+        # 자식 DELETE를 먼저 실행해 외래 키 제약 조건 위반을 방지합니다.
+        db.flush()
+        db.delete(notice)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    # DB 트랜잭션 성공 후 실제 파일을 삭제합니다.
+    for file_path in file_paths:
+        file_path.unlink(missing_ok=True)
 
     return {
         "message": "강의자료가 삭제되었습니다."
